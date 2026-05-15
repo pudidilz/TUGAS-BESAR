@@ -15,6 +15,17 @@ player_bullet = 'pbullet.png'
 enemy_bullet = 'enemybullet.png'
 ufo_bullet = 'ufobullet.png'
 
+'''SOUND'''
+
+laser_sound = pygame.mixer.Sound('laser.wav')
+explosion_sound = pygame.mixer.Sound('expl sound.mp3')
+game_over_sound = pygame.mixer.Sound('game_over.wav')
+game_over_music = pygame.mixer.Sound('game over.mp3')
+
+background_music = pygame.mixer.Sound('latar musik.mp3')
+
+pygame.mixer.init()
+
 screen = pygame.display.set_mode((0, 0), FULLSCREEN)
 s_width, s_height = screen.get_size()
 
@@ -110,6 +121,7 @@ class player(pygame.sprite.Sprite):
             sprite_group.add(bullet)
 
     def dead(self):
+        pygame.mixer.Sound.play(explosion_sound)
         self.alive = False
         self.activate_bullet = False
     
@@ -212,7 +224,8 @@ class Game:
         self.lives = 3
         self.score = 0
         self.init_create = True
-        
+        self.game_over_sound_delay = 0
+
         self.run_game()
 
     def pause_text(self):
@@ -245,10 +258,14 @@ class Game:
         text_rect = text.get_rect(center=(s_width/2, s_height/2))
         screen.blit(text, text_rect)
 
-
     def game_over_screen(self):
+        pygame.mixer.music.stop()
+        pygame.mixer.Sound.play(game_over_sound)
         while True:
             self.game_over_text()
+            self.game_over_sound_delay += 1
+            if self.game_over_sound_delay > 2000:
+                pygame.mixer.Sound.play(game_over_music)
             for event in pygame.event.get():
                 if event.type == QUIT:
                     pygame.quit()
@@ -264,6 +281,7 @@ class Game:
                         playerbullet_group.empty()
                         ufo_group.empty()
                         explosion_group.empty()
+                        pygame.mixer.Sound.stop(game_over_music)
                         self.__init__()
 
             pygame.display.update()
@@ -313,10 +331,10 @@ class Game:
               explosion = Explosion(expl_x, expl_y)
               explosion_group.add(explosion)
               sprite_group.add(explosion)
-
               i.rect.x = random.randrange(0, s_width)
               i.rect.y = random.randrange(-3000, -100)
               self.count_hit = 0
+              pygame.mixer.Sound.play(explosion_sound)
 
     def playerbullet_hits_ufo(self):
         hits = pygame.sprite.groupcollide(ufo_group, playerbullet_group, False, True)
@@ -331,6 +349,7 @@ class Game:
                 sprite_group.add(explosion)
                 i.rect.x = -199
                 self.count_hit2 = 0
+                pygame.mixer.Sound.play(explosion_sound)
 
     def enemybullet_hits_player(self):
         if self.player.image.get_alpha() == 255:
@@ -393,6 +412,8 @@ class Game:
         sprite_group.update()
 
     def run_game(self):
+        pygame.mixer.music.load("latar musik.mp3")
+        pygame.mixer.music.play(-1)
         if self.init_create:
             self.create_background()
             self.create_particles()
@@ -418,6 +439,7 @@ class Game:
                     sys.exit()
 
                 if event.type == KEYDOWN:
+                    pygame.mixer.Sound.play(laser_sound)
                     self.player.shoot()
                     if event.key == K_ESCAPE:
                         pygame.quit()

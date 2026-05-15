@@ -2,6 +2,13 @@ import pygame
 import sys
 import subprocess
 
+pygame.init()
+pygame.mixer.init()
+
+'''SOUND'''
+
+tap_menu_sound = pygame.mixer.Sound('Tap Menu.mp3')
+
 def draw_button(screen, text, font, pos, default_color, hover_color):
     mouse_pos = pygame.mouse.get_pos()
     text_surf = font.render(text, True, default_color)
@@ -49,6 +56,8 @@ def main_menu():
     quit_pos = (60, HEIGHT/2)
 
     running = True
+    play_hovered = False
+    quit_hovered = False
     while running:
         # screen.fill(BG_COLOR)
         screen.blit(background, (0, 0))
@@ -102,6 +111,28 @@ def main_menu():
             TEXT_COLOR,
             (255, 60, 60)
         )
+        mouse_pos = pygame.mouse.get_pos()
+
+        # PLAY HOVER
+        if play_btn.collidepoint(mouse_pos):
+
+            if not play_hovered:
+                tap_menu_sound.play()
+                play_hovered = True
+
+        else:
+            play_hovered = False
+
+
+        # QUIT HOVER
+        if quit_btn.collidepoint(mouse_pos):
+
+            if not quit_hovered:
+                tap_menu_sound.play()
+                quit_hovered = True
+
+            else:
+                quit_hovered = False
 
         pygame.display.flip()
         
@@ -113,6 +144,7 @@ def main_menu():
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 # PLAY BUTTON CLICKED
                 if play_btn.collidepoint(event.pos):
+                    pygame.mixer.Sound.play(tap_menu_sound)
                     # 1. Quit the menu's pygame instance to free up the screen/audio
                     pygame.quit()
                     
@@ -133,6 +165,7 @@ def main_menu():
                 
                 # QUIT BUTTON CLICKED
                 elif quit_btn.collidepoint(event.pos):
+                    pygame.mixer.Sound.play(tap_menu_sound)
                     running = False
 
     pygame.quit()
