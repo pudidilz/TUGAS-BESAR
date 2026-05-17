@@ -187,7 +187,7 @@ class Enemy(player):
 
     def shoot(self):
         # Musuh menembak HANYA saat berada di titik koordinat Y tertentu (pola tembakan statis)
-        if self.rect.y in (0, 30, 70, 100, 300, 700):
+        if self.rect.y in (0, 30, 90, 290, 300, 700):
             enemybullet = EnemyBullet(enemy_bullet)
             enemybullet.rect.x = self.rect.x
             enemybullet.rect.y = self.rect.y
@@ -213,7 +213,7 @@ class Ufo(Enemy):
 
     def shoot(self):
         # UFO menembak berdasarkan posisi X nya secara konsisten
-        if self.rect.x % 50 == 0:
+        if self.rect.x % 80 == 0:
             ufobullet = EnemyBullet(ufo_bullet)
             ufobullet.rect.x = self.rect.x + 50
             ufobullet.rect.y = self.rect.y + 60
@@ -454,6 +454,7 @@ class Game:
     def create_ufo(self):
         for i in range(5):
             self.ufo = Ufo(ufo_ship)
+            self.ufo.rect.x = -200 - (i * 300)
             ufo_group.add(self.ufo)
             sprite_group.add(self.ufo)
 

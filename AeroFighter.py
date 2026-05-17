@@ -221,8 +221,7 @@ def main_menu():
                     pygame.quit()
                     
                     # 2. Menjalankan file game utama secara terpisah menggunakan subprocess
-                    # Ganti "Test_1.py" dengan nama file game yang ingin dieksekusi!
-                    subprocess.run([sys.executable, "Test_1.py"])
+                    subprocess.run([sys.executable, "Program_game.py"])
                     
                     # 3. Baris ini dieksekusi setelah game selesai/ditutup. 
                     # Memulai (init) ulang Pygame untuk mengembalikan tampilan menu utama
