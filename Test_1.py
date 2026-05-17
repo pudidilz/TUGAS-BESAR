@@ -1,10 +1,13 @@
 import sys
 import random
-
+import os
 import pygame
 from pygame.locals import *
 
 pygame.init()
+
+# Center the window automatically in windowed mode
+os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 '''IMAGE'''
 
@@ -26,8 +29,12 @@ background_music = pygame.mixer.Sound('latar musik.mp3')
 
 pygame.mixer.init()
 
+# Set the default screen size
+fullscreen = True
 screen = pygame.display.set_mode((0, 0), FULLSCREEN)
+pygame.display.set_caption("AEROFIGHTER") # Windows caption
 s_width, s_height = screen.get_size()
+
 
 clock = pygame.time.Clock()
 FPS = 60
@@ -45,6 +52,23 @@ particle_group = pygame.sprite.Group()
 sprite_group = pygame.sprite.Group()
 
 pygame.mouse.set_visible(False)
+
+# Fullscreen toggle
+def toggle_fullscreen():
+    global screen
+    global s_width
+    global s_height
+    global fullscreen
+
+    fullscreen = not fullscreen
+
+    if fullscreen:
+        screen = pygame.display.set_mode((0, 0),pygame.FULLSCREEN)
+
+    else:
+        screen = pygame.display.set_mode((1280, 720))
+
+    s_width, s_height = screen.get_size()
 
 class Background(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -244,6 +268,11 @@ class Game:
                     sys.exit()
 
                 if event.type == KEYDOWN:
+                    # ALT + ENTER
+                    if event.key == K_RETURN and (
+                        event.mod & pygame.KMOD_ALT
+                    ):
+                        toggle_fullscreen()
                     if event.key == K_ESCAPE:
                         pygame.quit()
                         sys.exit()
@@ -272,6 +301,11 @@ class Game:
                     sys.exit()
 
                 if event.type == KEYDOWN:
+                    # ALT + ENTER for fullscreen mode
+                    if event.key == K_RETURN and (
+                        event.mod & pygame.KMOD_ALT
+                    ):
+                        toggle_fullscreen()
                     if event.key == K_ESCAPE:
                         pygame.quit()
                         sys.exit()
@@ -285,6 +319,101 @@ class Game:
                         self.__init__()
 
             pygame.display.update()
+
+
+    # Show tutorial in the beginning
+    def tutorial_screen(self):
+
+        tutorial_lines = [
+            "PRESS Z TO SHOOT",
+            "PRESS SPACE TO PAUSE",
+            "PRESS ESC TO QUIT",
+            "GET READY"
+        ]
+
+        font = pygame.font.SysFont('calibri', 40)
+
+        current_line = 0
+        timer = 0
+
+        while True:
+
+            screen.fill((0,0,0))
+
+            # ONLY update these
+            bacground_group.draw(screen)
+            bacground_group.update()
+
+            particle_group.draw(screen)
+            particle_group.update()
+
+            player_group.draw(screen)
+            player_group.update()
+
+            playerbullet_group.draw(screen)
+            playerbullet_group.update()
+
+            explosion_group.draw(screen)
+            explosion_group.update()
+
+            # Subtitle
+            text = font.render(
+                tutorial_lines[current_line],
+                True,
+                'white'
+            )
+
+            rect = text.get_rect(
+                center=(s_width//2, s_height - 100)
+            )
+
+            screen.blit(text, rect)
+
+            pygame.display.update()
+            clock.tick(FPS)
+
+            timer += 1
+
+            # Change every 3 seconds
+            if timer > FPS * 3:
+                current_line += 1
+                timer = 0
+
+            # End tutorial
+            if current_line >= len(tutorial_lines):
+                return
+
+            for event in pygame.event.get():
+
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == KEYDOWN:
+
+                    # ALT + ENTER fullscreen toggle
+                    if event.key == K_RETURN and (
+                        event.mod & pygame.KMOD_ALT
+                    ):
+                        toggle_fullscreen()
+
+                    # Skip tutorial ONLY with normal ENTER
+                    elif event.key == K_RETURN:
+                        return
+
+                    # Shoot
+                    elif event.key == K_z:
+                        pygame.mixer.Sound.play(laser_sound)
+                        self.player.shoot()
+
+                    # Pause during tutorial
+                    elif event.key == K_SPACE:
+                        self.pause_screen()
+
+                    # Quit game
+                    elif event.key == K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
 
     def create_background(self):
         for i in range(30):
@@ -397,14 +526,14 @@ class Game:
         self.live_img = pygame.transform.scale(self.live_img, (30, 30))
         n = 0
         for i in range(self.lives):
-            screen.blit(self.live_img, (0+n, s_height - 900))
+            screen.blit(self.live_img, (20+n , s_height - 60))
             n += 80
 
     def create_score(self):
         score = self.score
         font = pygame.font.SysFont('calibri', 30)
         text = font.render("Score:"+str(score), True, 'green')
-        text_rect = text.get_rect(center=(s_width-150, s_height-850))
+        text_rect = text.get_rect(topright=(s_width - 20, s_height- 60))
         screen.blit(text, text_rect)
 
     def run_update(self):
@@ -417,7 +546,8 @@ class Game:
         if self.init_create:
             self.create_background()
             self.create_particles()
-            self.create_player()
+            self.create_player() # Spawn player first before the tutorial begin
+            self.tutorial_screen() # Show tutorial BEFORE enemies exist
             self.create_enemy()
             self.create_ufo()
         while True:
@@ -439,8 +569,18 @@ class Game:
                     sys.exit()
 
                 if event.type == KEYDOWN:
-                    pygame.mixer.Sound.play(laser_sound)
-                    self.player.shoot()
+                    # ALT + ENTER
+                    if event.key == K_RETURN and (
+                        event.mod & pygame.KMOD_ALT
+                    ):
+                        toggle_fullscreen()
+
+                    # Only shoot when pressing z
+                    if event.key == K_z:
+                        pygame.mixer.Sound.play(laser_sound)
+                        self.player.shoot()
+                    # pygame.mixer.Sound.play(laser_sound)
+                    # self.player.shoot()
                     if event.key == K_ESCAPE:
                         pygame.quit()
                         sys.exit()
