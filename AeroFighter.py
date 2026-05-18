@@ -41,7 +41,11 @@ def draw_button(screen, text, font, pos, default_color, hover_color):
     return text_rect, is_hovering
 
 def main_menu():
-    pygame.init()
+
+    # MElimit FPS agar CPU usage tidak spike ke 100%
+    clock = pygame.time.Clock()
+    FPS = 60
+
     # Memuat dan memutar musik latar menu utama
     pygame.mixer.music.load("MainMenuTheme.mp3")
     pygame.mixer.music.play(-1) # Parameter -1 membuat musik berulang tanpa henti (loop)
@@ -217,7 +221,7 @@ def main_menu():
                 if play_btn.collidepoint(event.pos):
                     pygame.mixer.Sound.play(tap_menu_sound)
                     
-                    # 1. Keluar dari module pygame milik menu agar memori/layar/audio dilepaskan untuk game
+                    # 1. Keluar dari modul pygame milik menu agar memori/layar/audio dilepaskan untuk game
                     pygame.quit()
                     
                     # 2. Menjalankan file game utama secara terpisah menggunakan subprocess
@@ -226,20 +230,26 @@ def main_menu():
                     # 3. Baris ini dieksekusi setelah game selesai/ditutup. 
                     # Memulai (init) ulang Pygame untuk mengembalikan tampilan menu utama
                     pygame.init()
+                    pygame.mixer.init()
                     screen = pygame.display.set_mode((WIDTH, HEIGHT))
                     pygame.display.set_caption("AEROFIGHTER")
                     pygame.mixer.music.load("MainMenuTheme.mp3")
                     pygame.mixer.music.play(-1)
 
                     # 4. Inisialisasi ulang font (Sangat penting agar program tidak crash setelah pygame.init ulang)
-                    font = pygame.font.SysFont("Courier New", 48)
-                    title_font = pygame.font.SysFont("Courier New", 72)
+                    font_size = int(WIDTH * 0.06)
+                    title_size = int(WIDTH * 0.09)
+                    font = pygame.font.SysFont("Courier New", font_size)
+                    title_font = pygame.font.SysFont("Courier New", title_size)
                 
                 # JIKA TOMBOL QUIT DIKLIK
                 elif quit_btn.collidepoint(event.pos):
                     pygame.mixer.Sound.play(tap_menu_sound)
                     running = False # Menghentikan loop utama
-
+        
+        #Limit FPS
+        clock.tick(FPS)
+        
     # Keluar dari pygame dan sistem saat perulangan 'running' bernilai False
     pygame.quit()
     sys.exit()

@@ -1,1 +1,1 @@
-(s_width
+    'planet4.png'

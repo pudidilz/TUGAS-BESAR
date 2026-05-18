@@ -6,6 +6,8 @@ from pygame.locals import *
 
 # Inisialisasi semua modul pygame yang diperlukan
 pygame.init()
+# Inisialisasi modul mixer pygame untuk memutar suara
+pygame.mixer.init()
 
 # Mengatur agar jendela game berada di tengah layar secara otomatis jika dalam mode windowed
 os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -19,6 +21,14 @@ player_bullet = 'pbullet.png'
 enemy_bullet = 'enemybullet.png'
 ufo_bullet = 'ufobullet.png'
 
+'''PLANET ASSETS'''
+planet_images = [
+    'planet1.png',
+    'planet2.png',
+    'planet3.png',
+    'planet4.png'
+]
+
 '''ASSET SUARA'''
 # Memuat aset suara dan musik latar
 # Pastikan file-file ini berada di direktori yang sama dengan script
@@ -27,9 +37,6 @@ explosion_sound = pygame.mixer.Sound('expl sound.mp3')
 game_over_sound = pygame.mixer.Sound('game_over.wav')
 game_over_music = pygame.mixer.Sound('game over.mp3')
 background_music = pygame.mixer.Sound('latar musik.mp3')
-
-# Inisialisasi modul mixer pygame untuk memutar suara
-pygame.mixer.init()
 
 # Pengaturan default layar (mulai dengan mode Fullscreen)
 fullscreen = True
@@ -52,6 +59,7 @@ enemybullet_group = pygame.sprite.Group()
 ufobullet_group = pygame.sprite.Group()
 explosion_group = pygame.sprite.Group()
 particle_group = pygame.sprite.Group()
+planet_group = pygame.sprite.Group()
 
 # Grup utama yang menampung hampir semua sprite untuk dirender bersamaan
 sprite_group = pygame.sprite.Group()
@@ -108,6 +116,66 @@ class Particle(Background):
         if self.rect.y > s_height:
             self.rect.x = random.randrange(0, s_width) # Diperbaiki dari s_height ke s_width untuk X
             self.rect.y = random.randrange(-50, 0) # Mulai dari sedikit di luar layar atas
+
+# Menambahkan background planet
+class Planet(pygame.sprite.Sprite):
+    """Massive cinematic background planet"""
+
+    def __init__(self, image_path):
+        super().__init__()
+
+        original = pygame.image.load(image_path).convert_alpha()
+
+        # BIG but not absurd
+        scale = random.randint(900, 1600)
+
+        self.image = pygame.transform.smoothscale(
+            original,
+            (scale, scale)
+        )
+
+        # Visible enough
+        self.image.set_alpha(random.randint(40, 80))
+
+        self.rect = self.image.get_rect()
+
+        # SPAWN partially outside screen
+        side = random.choice(["left", "right"])
+
+        if side == "left":
+            self.rect.x = random.randint(-700, -250)
+        else:
+            self.rect.x = random.randint(
+                s_width - 300,
+                s_width - 50
+            )
+
+        # Start above screen
+        self.rect.y = random.randint(-2000, -600)
+
+        # FAST cinematic motion
+        self.speed_y = random.uniform(0.27, 0.8)
+
+        # slight drift
+        self.speed_x = random.uniform(-0.3, 0.3)
+
+        # float precision
+        self.pos_x = float(self.rect.x)
+        self.pos_y = float(self.rect.y)
+
+    def update(self):
+
+        # FLOAT MOVEMENT
+        self.pos_y += self.speed_y
+        self.pos_x += self.speed_x
+
+        self.rect.y = int(self.pos_y)
+        self.rect.x = int(self.pos_x)
+
+        # Delete after fully gone
+        if self.rect.top > s_height + 500:
+            self.kill()
+
 
 class player(pygame.sprite.Sprite):
     """Kelas untuk pesawat pemain yang dikontrol dengan mouse"""
@@ -566,6 +634,20 @@ class Game:
         """Membungkus logika rendering sprite utama"""
         sprite_group.draw(screen)
         sprite_group.update()
+    
+    # Planet spawneer
+    def create_planets(self):
+
+        for i in range(2):
+
+            image = random.choice(planet_images)
+
+            planet = Planet(image)
+
+            planet_group.add(planet)
+
+            # render behind everything
+            sprite_group.add(planet)
 
     def run_game(self):
         """Fungsi Loop Utama Game (Game Loop)"""
@@ -576,6 +658,7 @@ class Game:
         if self.init_create:
             self.create_background()
             self.create_particles()
+            self.create_planets()
             self.create_player() 
             self.tutorial_screen() # Tampilkan tutorial SEBELUM musuh muncul
             self.create_enemy()
@@ -584,6 +667,18 @@ class Game:
         while True:
             screen.fill((0, 0, 0)) # Bersihkan layar tiap frame
             
+            # One planet at a time
+            if len(planet_group) < 1:
+
+                image = random.choice(planet_images)
+
+                new_planet = Planet(image)
+
+                planet_group.add(new_planet)
+
+                sprite_group.add(new_planet)
+
+
             # Cek semua kondisi interaksi dan tabrakan
             self.playerbullet_hits_enemy()
             self.playerbullet_hits_ufo()
